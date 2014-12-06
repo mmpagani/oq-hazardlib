@@ -18,9 +18,9 @@
 :mod:`openquake.hazardlib.calc.hazard_curve` implements
 :func:`hazard_curves`.
 """
-import sys
 import numpy
 
+from openquake.hazardlib.source.base import SeismicSourceCluster
 from openquake.hazardlib.calc import filters
 from openquake.hazardlib.imt import from_string
 from openquake.hazardlib.gsim.base import deprecated
@@ -107,27 +107,18 @@ def calc_hazard_curves(
         corresponding value in ``imts`` dict).
     """
     imts = {from_string(imt): imls for imt, imls in imtls.iteritems()}
+
+    # This is the object where we cumulate the contributions
     curves = dict((imt, numpy.ones([len(sites), len(imtls[imt])]))
                   for imt in imtls)
-    sources_sites = ((source, sites) for source in sources)
-    for source, s_sites in source_site_filter(sources_sites):
-        try:
-            ruptures_sites = ((rupture, s_sites)
-                              for rupture in source.iter_ruptures())
-            for rupture, r_sites in rupture_site_filter(ruptures_sites):
-                gsim = gsims[rupture.tectonic_region_type]
-                sctx, rctx, dctx = gsim.make_contexts(r_sites, rupture)
-                for imt in imts:
-                    poes = gsim.get_poes(sctx, rctx, dctx, imt, imts[imt],
-                                         truncation_level)
-                    pno = rupture.get_probability_no_exceedance(poes)
-                    curves[str(imt)] *= r_sites.expand(pno, placeholder=1)
-        except Exception, err:
-            etype, err, tb = sys.exc_info()
-            msg = 'An error occurred with source id=%s. Error: %s'
-            msg %= (source.source_id, err.message)
-            raise etype, msg, tb
 
-    for imt in imtls:
-        curves[imt] = 1 - curves[imt]
+    # This is for back compatibility
+    if not isinstance(sources[0], SeismicSourceCluster):
+        sources = [SeismicSourceCluster(sources, numpy.ones(len(sources)),
+                                        'indep', 'indep')]
+
+
+
+
+
     return curves

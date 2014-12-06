@@ -22,6 +22,21 @@ from openquake.hazardlib.slots import with_slots
 
 
 @with_slots
+class SeismicSourceCluster(object):
+    """
+    :parameter cluster:
+        A list of seismic source lists
+    """
+    __slots__ = ['clusters', 'weights']
+
+    def __init__(self, clusters):
+        self.clusters = clusters
+        self.weights = weights
+        self.src_indep = ''
+        self.rup_indep = ''
+
+
+@with_slots
 class BaseSeismicSource(object):
     """
     Base class representing a seismic source, that is a structure generating
@@ -161,8 +176,8 @@ class ParametricSeismicSource(BaseSeismicSource):
         and vice versa.
     :param temporal_occurrence_model:
         Instance of
-        :class:`openquake.hazardlib.tom.PoissonTOM` defining temporal occurrence
-        model for calculating rupture occurrence probabilities
+        :class:`openquake.hazardlib.tom.PoissonTOM` defining temporal
+        occurrence model for calculating rupture occurrence probabilities
 
     :raises ValueError:
         If either rupture aspect ratio or rupture mesh spacing is not positive
