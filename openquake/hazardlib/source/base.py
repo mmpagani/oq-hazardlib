@@ -22,19 +22,33 @@ from openquake.hazardlib.slots import with_slots
 
 
 @with_slots
+class SeismicSourceClusterCollection(object):
+    """
+    :parameter cluster:
+        A list containing lists of seismic sources
+    """
+    __slots__ = ['clusters_list']
+
+    def __init__(self, clusters_list):
+        self.clusters_list = clusters_list
+
+    def __iter__(self):
+        return iter(self.clusters_list)
+
+
+@with_slots
 class SeismicSourceCluster(object):
     """
     :parameter cluster:
-        A list of seismic source lists
+        A list containing lists of seismic sources
     """
-    __slots__ = ['clusters', 'weights']
+    __slots__ = ['clusters', 'weights', 'src_indep', 'rup_indep']
 
-    def __init__(self, clusters):
+    def __init__(self, clusters, weights, src_indep, rup_indep):
         self.clusters = clusters
         self.weights = weights
-        self.src_indep = ''
-        self.rup_indep = ''
-
+        self.src_indep = src_indep
+        self.rup_indep = rup_indep
 
 @with_slots
 class BaseSeismicSource(object):

@@ -18,9 +18,11 @@
 :mod:`openquake.hazardlib.calc.hazard_curve` implements
 :func:`hazard_curves`.
 """
+import sys
 import numpy
 
-from openquake.hazardlib.source.base import SeismicSourceCluster
+from openquake.hazardlib.source.base import SeismicSourceCluster, \
+    SeismicSourceClusterCollection
 from openquake.hazardlib.calc import filters
 from openquake.hazardlib.imt import from_string
 from openquake.hazardlib.gsim.base import deprecated
@@ -47,7 +49,7 @@ def hazard_curves(
 
 
 def calc_hazard_curves(
-        sources, sites, imtls, gsims, truncation_level,
+        src_clusts, sites, imtls, gsims, truncation_level,
         source_site_filter=filters.source_site_noop_filter,
         rupture_site_filter=filters.rupture_site_noop_filter):
     """
@@ -74,7 +76,7 @@ def calc_hazard_curves(
     in the same time span. The basic assumption is that seismic sources are
     independent, and ruptures in a seismic source are also independent.
 
-    :param sources:
+    :param src_clusts:
         An iterator of seismic sources objects (instances of subclasses
         of :class:`~openquake.hazardlib.source.base.BaseSeismicSource`).
     :param sites:
@@ -112,13 +114,88 @@ def calc_hazard_curves(
     curves = dict((imt, numpy.ones([len(sites), len(imtls[imt])]))
                   for imt in imtls)
 
-    # This is for back compatibility
-    if not isinstance(sources[0], SeismicSourceCluster):
-        sources = [SeismicSourceCluster(sources, numpy.ones(len(sources)),
-                                        'indep', 'indep')]
+    # This is for backward compatibility
+    if not isinstance(src_clusts, SeismicSourceClusterCollection):
+        cluster = SeismicSourceCluster(src_clusts, 1, 'indep', 'indep')
+        src_clusts = SeismicSourceClusterCollection([cluster])
 
+    # Compute hazard curves
+    for cluster in src_clusts:
 
+        tot_wei = 0.0
 
+        # Source-site tuple
+        sources_sites = ((source, sites) for source in cluster.clusters)
 
+        # Temporary collection of curves used within the cluster of
+        # sources
+        if cluster.src_indep is 'indep':
+            tc_clu = dict((imt, numpy.ones([len(sites), len(imtls[imt])]))
+                          for imt in imtls)
+        else:
+            tc_clu = dict((imt, numpy.zeros([len(sites), len(imtls[imt])]))
+                          for imt in imtls)
+
+        # Processing sources in the cluster
+        for source, s_sites in source_site_filter(sources_sites):
+
+            try:
+
+                # if cluster.rup_indep is 'indep':
+                tc_src = dict((imt, numpy.ones([len(sites),
+                              len(imtls[imt])])) for imt in imtls)
+                # else:
+                #    tc_src = dict((imt, numpy.zeros([len(sites),
+                #                  len(imtls[imt])])) for imt in imtls)
+
+                ruptures_sites = ((rupture, s_sites)
+                                  for rupture in source.iter_ruptures())
+
+                for rupture, r_sites in rupture_site_filter(ruptures_sites):
+                    gsim = gsims[rupture.tectonic_region_type]
+                    sctx, rctx, dctx = gsim.make_contexts(r_sites, rupture)
+                    for imt in imts:
+                        poes = gsim.get_poes(sctx, rctx, dctx, imt, imts[imt],
+                                             truncation_level)
+                        pno = rupture.get_probability_no_exceedance(poes)
+
+                        # Update the object we use to cumulate contributions
+                        # from the different ruptures in a single source
+                        if cluster.rup_indep is 'indep':
+                            tc_src[str(imt)] *= r_sites.expand(pno,
+                                                               placeholder=1)
+                        else:
+                            tc_src[str(imt)] += r_sites.expand(pno,
+                                                               placeholder=1)
+
+                if cluster.src_indep is 'indep':
+                    for imt in imtls:
+                        tc_clu[imt] *= tc_src[imt]
+                else:
+                    for imt in imtls:
+                        tc_clu[imt] += (tc_src[imt] *
+                                        cluster.weights[source.source_id])
+                        tot_wei += cluster.weights[source.source_id]
+                del tc_src
+
+            except Exception, err:
+                etype, err, tb = sys.exc_info()
+                msg = 'An error occurred with source id=%s. Error: %s'
+                msg %= (source.source_id, err.message)
+                raise etype, msg, tb
+
+        # Update the probability of non-exceedance assuming that
+        # SeismicSourceClusters are independent. Note that in the case of
+        # mutually exclusive events with associated weights we must cope with
+        # the case when some of the sources are filtered out.
+        for imt in imtls:
+            if tot_wei < 1. and cluster.src_indep is 'mutex':
+                curves[imt] *= (tc_clu[imt] + 1. - tot_wei)
+            else:
+                curves[imt] *= tc_clu[imt]
+        del tc_clu
+
+    for imt in imtls:
+        curves[imt] = 1. - curves[imt]
 
     return curves
