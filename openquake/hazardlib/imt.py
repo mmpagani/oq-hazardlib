@@ -24,7 +24,7 @@ import functools
 # NB: (MS) the management of the IMTs implemented here is horrible and will
 # be thrown away when we will need to introduce a new IMT.
 
-__all__ = ('PGA', 'PGV', 'PGD', 'SA', 'IA', 'CAV', 'RSD', 'MMI')
+__all__ = ('PGA', 'PGV', 'PGD', 'SA', 'IA', 'CAV', 'RSD', 'MMI', 'AvgSA')
 
 DEFAULT_SA_DAMPING = 5.0
 
@@ -36,12 +36,16 @@ def from_string(imt):
     :param str imt:
         Intensity Measure Type.
     """
-    if 'SA' in imt:
+    if re.search('^SA', imt):
         match = re.match(r'^SA\(([^)]+?)\)$', imt)
         period = float(match.group(1))
         return SA(period, DEFAULT_SA_DAMPING)
     else:
-        return globals()[imt](None, None)
+        try:
+            imt_class = globals()[imt]
+        except KeyError:
+            raise ValueError('Unknown IMT: %s' % imt)
+        return imt_class(None, None)
 
 
 @functools.total_ordering
@@ -152,4 +156,10 @@ class MMI(_IMT):
     Modified Mercalli intensity, a Roman numeral describing the severity
     of an earthquake in terms of its effects on the earth's surface
     and on humans and their structures.
+    """
+
+
+class AvgSA(_IMT):
+    """
+    Average Spectral Acceleration.
     """

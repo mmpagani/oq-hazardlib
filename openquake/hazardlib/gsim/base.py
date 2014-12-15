@@ -34,7 +34,7 @@ from openquake.hazardlib import imt as imt_module
 
 
 class NotVerifiedWarning(UserWarning):
-    """
+    """                     
     Raised when a non verified GSIM is instantiated
     """
 
