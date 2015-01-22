@@ -47,7 +47,7 @@ def hazard_curves(
     return {from_string(imt): curves
             for imt, curves in curves_by_imt.iteritems()}
 
-
+    
 def calc_hazard_curves(
         src_clusts, sites, imtls, gsims, truncation_level,
         source_site_filter=filters.source_site_noop_filter,
@@ -121,6 +121,7 @@ def calc_hazard_curves(
 
     # Compute hazard curves
     for cluster in src_clusts:
+        print ' ------- Cluster name:', cluster.name
 
         tot_wei = 0.0
 
@@ -173,8 +174,12 @@ def calc_hazard_curves(
                         tc_clu[imt] *= tc_src[imt]
                 else:
                     for imt in imtls:
+                        # Here we update the curves for a specific intensity
+                        # measure type.
+                        print 'Source ID:', source.source_id
                         tc_clu[imt] += (tc_src[imt] *
                                         cluster.weights[source.source_id])
+                        
                         tot_wei += cluster.weights[source.source_id]
                 del tc_src
 

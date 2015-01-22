@@ -41,14 +41,27 @@ class SeismicSourceCluster(object):
     """
     :parameter cluster:
         A list containing lists of seismic sources
+    :parameter weights:
+        A dictionary whose keys are the source IDs of the cluster and the
+        values are the weights associated with each source
+    :parameter src_indep:
+        A string specifying if the sources in this cluster are independent or
+        mutually exclusive
+    :parameter rup_indep:
+        A string specifying if the ruptures within each source of the cluster
+        are independent or mutually exclusive
+    :parameter name:
+        A string used to indicate the name of the cluster
     """
-    __slots__ = ['clusters', 'weights', 'src_indep', 'rup_indep']
+    __slots__ = ['clusters', 'weights', 'src_indep', 'rup_indep', 'name']
 
-    def __init__(self, clusters, weights, src_indep, rup_indep):
+    def __init__(self, clusters, weights, src_indep, rup_indep, name=''):
+        self.name = name
         self.clusters = clusters
         self.weights = weights
         self.src_indep = src_indep
         self.rup_indep = rup_indep
+
 
 @with_slots
 class BaseSeismicSource(object):
