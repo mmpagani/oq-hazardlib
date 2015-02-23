@@ -23,6 +23,7 @@ import numpy as np
 from openquake.hazardlib.geo.point import Point
 from openquake.hazardlib.geo.surface.base import BaseSurface
 from openquake.hazardlib.geo.mesh import Mesh
+from openquake.hazardlib.geo import utils
 
 
 class GriddedSurface(BaseSurface):
@@ -52,7 +53,7 @@ class GriddedSurface(BaseSurface):
             An instance of
             :class:`~openquake.hazardlib.geo.surface.gridded.GriddedSurface`
         """
-        
+
         return cls(Mesh.from_points_list(points))
 
     def get_bounding_box(self):
@@ -64,7 +65,7 @@ class GriddedSurface(BaseSurface):
             northern and southern borders of the bounding box respectively.
             Values are floats in decimal degrees.
         """
-        raise NotImplementedError
+        return utils.get_spherical_bounding_box(self.mesh.lons, self.mesh.lats)
 
     def get_min_distance(self, mesh):
         """
