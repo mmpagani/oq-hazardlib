@@ -13,6 +13,7 @@ Built-in GSIMs
 
     abrahamson_silva_1997
     abrahamson_silva_2008
+    abrahamson_2014
     akkar_2013
     akkar_2014
     akkar_bommer_2010
@@ -23,6 +24,7 @@ Built-in GSIMs
     atkinson_boore_2006
     berge_thierry_2003
     bindi_2011
+    bindi_2014
     boore_1993
     boore_1997
     boore_2014
@@ -33,6 +35,7 @@ Built-in GSIMs
     campbell_bozorgnia_2003
     campbell_bozorgnia_2008
     campbell_bozorgnia_2014
+    cauzzi_2014
     cauzzi_faccioli_2008
     cauzzi_faccioli_2008_swiss
     chiou_youngs_2008
@@ -48,11 +51,13 @@ Built-in GSIMs
     fukushima_tanaka_1990
     garcia_2005
     geomatrix_1993
+    idriss_2014
     lin_lee_2008
     lin_2009
     mcverry_2006
     megawati_pan_2010
     pezeshk_2011
+    rietbrock_2013
     sadigh_1997
     silva_2002
     si_midorikawa_1999

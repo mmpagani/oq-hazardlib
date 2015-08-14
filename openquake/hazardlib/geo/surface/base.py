@@ -71,6 +71,20 @@ class BaseSurface(object):
         """
 
     @abc.abstractmethod
+    def get_ry0_distance(self, mesh):
+        """
+        Compute the minimum distance between each point of a mesh and the great
+        circle arcs perpendicular to the average strike direction of the
+        fault trace and passing through the end-points of the trace.
+
+        :param mesh:
+            :class:`~openquake.hazardlib.geo.mesh.Mesh` of points to calculate
+            Ry0-distance to.
+        :returns:
+            Numpy array of distances in km.
+        """
+
+    @abc.abstractmethod
     def get_rx_distance(self, mesh):
         """
         Compute distance between each point of mesh and surface's great circle
@@ -224,6 +238,39 @@ class BaseQuadrilateralSurface(BaseSurface):
         :meth:`~openquake.hazardlib.geo.mesh.Mesh.get_joyner_boore_distance`.
         """
         return self.get_mesh().get_joyner_boore_distance(mesh)
+
+    def get_ry0_distance(self, mesh):
+        """
+        :param mesh:
+            :class:`~openquake.hazardlib.geo.mesh.Mesh` of points to calculate
+            Ry0-distance to.
+        :returns:
+            Numpy array of distances in km.
+
+        See also :meth:`superclass method <.base.BaseSurface.get_ry0_distance>`
+        for spec of input and result values.
+
+        This method uses an average strike direction to compute ry0.
+        """
+
+        # This computes ry0 by using an average strike direction
+        top_edge = self.get_mesh()[0:1]
+        mean_strike = self.get_strike()
+
+        dst1 = geodetic.distance_to_arc(top_edge.lons[0, 0],
+                                        top_edge.lats[0, 0],
+                                        (mean_strike+90.) % 360,
+                                        mesh.lons, mesh.lats)
+
+        dst2 = geodetic.distance_to_arc(top_edge.lons[0, -1],
+                                        top_edge.lats[0, -1],
+                                        (mean_strike+90.) % 360,
+                                        mesh.lons, mesh.lats)
+
+        # Get the shortest distance from two two lines
+        dst = numpy.fmin(numpy.abs(dst1), numpy.abs(dst2))
+
+        return dst
 
     def get_rx_distance(self, mesh):
         """
@@ -389,3 +436,42 @@ class BaseQuadrilateralSurface(BaseSurface):
             An instance of
             :class:`openquake.hazardlib.geo.mesh.RectangularMesh`.
         """
+
+    def get_hypo_location(self, mesh, mesh_spacing, hypo_loc=None):
+        """
+        The method determines the location of the hypocentre within the rupture
+
+        :param mesh:
+            :class:`~openquake.hazardlib.geo.mesh.Mesh` of points
+        :param mesh_spacing:
+            The desired distance between two adjacent points in source's
+            ruptures' mesh, in km. Mainly this parameter allows to balance
+            the trade-off between time needed to compute the distance
+            between the rupture surface and a site and the precision of that
+            computation.
+        :param hypo_loc:
+            Hypocentre location as fraction of rupture plane, as a tuple of
+            (Along Strike, Down Dip), e.g. a hypocentre located in the centroid
+            of the rupture would be input as (0.5, 0.5), whereas a
+            hypocentre located in a position 3/4 along the length, and 1/4 of
+            the way down dip of the rupture plane would be entered as
+            (0.75, 0.25).
+        :returns:
+            Hypocentre location as instance of 
+            :class:`~openquake.hazardlib.geo.point.Point`
+        """
+        centroid = mesh.get_middle_point()
+        if hypo_loc is None:
+            return centroid
+
+        total_len_y = (len(mesh.depths) - 1) * mesh_spacing
+        y_distance = hypo_loc[1] * total_len_y
+        y_node = numpy.round(y_distance / mesh_spacing)
+        total_len_x = (len(mesh.lons[y_node]) - 1) * mesh_spacing
+        x_distance = hypo_loc[0] * total_len_x
+        x_node = numpy.round(x_distance / mesh_spacing)
+        hypocentre = Point(mesh.lons[y_node][x_node],
+                           mesh.lats[y_node][x_node],
+                           mesh.depths[y_node][x_node])
+        return hypocentre
+

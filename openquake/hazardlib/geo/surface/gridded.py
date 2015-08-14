@@ -53,7 +53,6 @@ class GriddedSurface(BaseSurface):
             An instance of
             :class:`~openquake.hazardlib.geo.surface.gridded.GriddedSurface`
         """
-
         return cls(Mesh.from_points_list(points))
 
     def get_bounding_box(self):
@@ -185,8 +184,12 @@ class GriddedSurface(BaseSurface):
 
     def get_middle_point(self):
         """
+<<<<<<< HEAD
         The middle point in this case is the point in the cloud closer to
         the centre of mass of the cloud
+=======
+        Compute coordinates of surface middle point.
+>>>>>>> 4f0d1a20aaaa07d4c908d16fc970c5976cd09991
 
         The actual definition of ``middle point`` depends on the type of
         surface geometry.
@@ -195,12 +198,16 @@ class GriddedSurface(BaseSurface):
             instance of :class:`openquake.hazardlib.geo.point.Point`
             representing surface middle point.
         """
+<<<<<<< HEAD
         lon_bar = np.mean(self.mesh.lons)
         lat_bar = np.mean(self.mesh.lats)
         idx = np.argmin((self.mesh.lons - lon_bar)**2 +
                         (self.mesh.lats - lat_bar)**2)
         return Point(self.mesh.lons[idx], self.mesh.lats[idx],
                      self.mesh.depths[idx])
+=======
+        raise NotImplementedError
+>>>>>>> 4f0d1a20aaaa07d4c908d16fc970c5976cd09991
 
     def get_ry0_distance(self, mesh):
         """
